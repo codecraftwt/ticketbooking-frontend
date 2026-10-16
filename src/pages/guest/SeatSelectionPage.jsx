@@ -46,7 +46,8 @@ export const SeatSelectionPage = () => {
     // Initialize direct Socket.IO connection to backend (avoids Vite WS proxy ECONNABORTED drops)
     const socketUrl = import.meta.env.VITE_SOCKET_URL || `${window.location.protocol}//${window.location.hostname}:5000`;
     const socket = io(socketUrl, {
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
+      reconnectionAttempts: 5,
     });
     socketRef.current = socket;
 
@@ -116,18 +117,42 @@ export const SeatSelectionPage = () => {
         setShow(s);
 
         // Map inventory into flat seats array
+        // Map inventory into flat seats array directly from database
         const rawSeats = s.seats || s.inventory || [];
         if (rawSeats.length > 0) {
-          const mapped = rawSeats.map((item) => ({
-            code: item.seatId,
-            row: item.rowLabel || item.row || item.seatId?.[0] || 'A',
-            num: item.seatNumber || item.number || parseInt(item.seatId?.slice(1)) || 1,
-            tier: item.tier || 'Standard',
-            price: item.price || 20,
-            isBooked: item.status === 'BOOKED' || item.isBlocked,
-            isHeld: item.status === 'HELD',
-            isAccessible: item.isAccessible,
-          }));
+          // Extract pricing from show.pricing if available
+          const pricingByTier = {};
+          if (Array.isArray(s.pricing)) {
+            s.pricing.forEach((p) => {
+              if (p.tier) pricingByTier[p.tier] = p.price;
+            });
+          }
+
+          const mapped = rawSeats.map((item) => {
+            const rowLabel = item.rowLabel || item.row || item.seatId?.[0] || 'A';
+            const tier = item.tier || 'Standard';
+            const price =
+              item.price !== undefined && item.price !== null
+                ? Number(item.price)
+                : pricingByTier[tier] !== undefined
+                ? Number(pricingByTier[tier])
+                : 10;
+
+            return {
+              code: item.seatId,
+              row: rowLabel,
+              num:
+                item.seatNumber ||
+                item.number ||
+                parseInt(item.seatId?.replace(/\D/g, '')) ||
+                1,
+              tier: tier,
+              price: price,
+              isBooked: item.status === 'BOOKED' || item.isBlocked,
+              isHeld: item.status === 'HELD',
+              isAccessible: item.isAccessible,
+            };
+          });
           setSeats(mapped);
         } else {
           // Fallback mock grid
@@ -262,6 +287,37 @@ export const SeatSelectionPage = () => {
 
   // Progress percentage (300 seconds / 5 minutes default)
   const timerPercentage = Math.round((secondsRemaining / 300) * 100);
+
+  // Group seats by tier to show clear price details, row coverage & available seat count
+  // MUST be called unconditionally before any early returns (React Rules of Hooks)
+  const tierSummary = React.useMemo(() => {
+    const summary = {};
+    seats.forEach((s) => {
+      if (!summary[s.tier]) {
+        summary[s.tier] = {
+          tier: s.tier,
+          price: s.price,
+          rows: new Set(),
+          totalSeats: 0,
+          availableSeats: 0,
+        };
+      }
+      summary[s.tier].rows.add(s.row);
+      summary[s.tier].totalSeats += 1;
+      if (!s.isBooked && !s.isHeld) {
+        summary[s.tier].availableSeats += 1;
+      }
+    });
+
+    return Object.values(summary).map((item) => {
+      const sortedRows = Array.from(item.rows).sort();
+      return {
+        ...item,
+        minRow: sortedRows[0],
+        maxRow: sortedRows[sortedRows.length - 1],
+      };
+    });
+  }, [seats]);
 
   if (loading) {
     return (
@@ -459,22 +515,106 @@ export const SeatSelectionPage = () => {
             /* Numbered Seat Map Viewport */
             <>
               {/* Screen / Stage Indicator */}
-              <div className="w-full max-w-lg mb-12 text-center">
-                <div className="h-2.5 w-full bg-gradient-to-r from-slate-200 via-indigo-300 to-slate-200 rounded-full shadow-inner mb-2" />
+              <div className="w-full max-w-lg mb-8 text-center">
+                <div className="h-2.5 w-full bg-gradient-to-r from-slate-200 via-indigo-400 to-slate-200 rounded-full shadow-inner mb-2" />
                 <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500 font-mono">
                   {show?.layout?.stage?.label || '70MM IMAX LASER CURVED SCREEN'}
                 </span>
               </div>
 
-              {/* Seat Grid */}
+              {/* Seat Tier & Pricing Overview Cards */}
+              <div className="w-full max-w-2xl mb-8">
+                <div
+                  className={`grid ${
+                    tierSummary.length === 1
+                      ? 'grid-cols-1'
+                      : tierSummary.length === 2
+                      ? 'grid-cols-1 sm:grid-cols-2'
+                      : 'grid-cols-1 sm:grid-cols-3'
+                  } gap-3`}
+                >
+                  {tierSummary.map((t) => {
+                    const isVIP = t.tier === 'VIP';
+                    const isPrem = t.tier === 'Premium';
+
+                    return (
+                      <div
+                        key={t.tier}
+                        className={`p-3.5 rounded-2xl border transition-all shadow-xs ${
+                          isVIP
+                            ? 'bg-amber-500/10 border-amber-300 text-amber-950'
+                            : isPrem
+                            ? 'bg-purple-500/10 border-purple-300 text-purple-950'
+                            : 'bg-sky-500/10 border-sky-300 text-sky-950'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`w-3 h-3 rounded-full ${
+                                isVIP
+                                  ? 'bg-amber-500'
+                                  : isPrem
+                                  ? 'bg-purple-500'
+                                  : 'bg-sky-500'
+                              }`}
+                            />
+                            <span className="text-xs font-black font-['Outfit'] uppercase tracking-wider">
+                              {t.tier} Tier
+                            </span>
+                          </div>
+                          <span className="text-base font-extrabold font-mono">
+                            ${t.price}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] opacity-80 font-medium">
+                          <span>
+                            {t.minRow === t.maxRow
+                              ? `Row ${t.minRow}`
+                              : `Rows ${t.minRow} - ${t.maxRow}`}
+                            {' • '}{t.totalSeats} Total Seats
+                          </span>
+                          <span className="font-semibold">{t.availableSeats} open</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Seat Grid with Row Tier Badges & Prices */}
               <div className="w-full max-w-2xl space-y-3.5 overflow-x-auto pb-4">
                 {uniqueRows.map((rowLetter) => {
                   const rowSeats = seats.filter((s) => s.row === rowLetter);
+                  const rowTier = rowSeats[0]?.tier || 'Standard';
+                  const rowPrice = rowSeats[0]?.price || 10;
+
+                  const isVIP = rowTier === 'VIP';
+                  const isPrem = rowTier === 'Premium';
+
+                  const tierBadgeClass = isVIP
+                    ? 'bg-amber-100 text-amber-900 border-amber-300'
+                    : isPrem
+                    ? 'bg-purple-100 text-purple-900 border-purple-300'
+                    : 'bg-sky-50 text-sky-900 border-sky-200';
+
                   return (
                     <div key={rowLetter} className="flex items-center justify-center gap-2 min-w-max">
-                      <span className="w-6 text-xs font-bold font-mono text-slate-400 text-center">
+                      {/* Left Tier Indicator Badge */}
+                      <div className="w-24 text-right pr-1">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border shadow-2xs ${tierBadgeClass}`}
+                        >
+                          {rowTier} • ${rowPrice}
+                        </span>
+                      </div>
+
+                      {/* Left Row Letter */}
+                      <span className="w-5 text-xs font-bold font-mono text-slate-400 text-center">
                         {rowLetter}
                       </span>
+
+                      {/* Seats in Row */}
                       <div className="flex gap-2">
                         {rowSeats.map((seat) => {
                           const isSelected = selectedSeatCodes.includes(seat.code);
@@ -486,25 +626,23 @@ export const SeatSelectionPage = () => {
                               type="button"
                               onClick={() => toggleSeat(seat)}
                               disabled={seat.isBooked || (seat.isHeld && !isSelected)}
-                              title={`${seat.code} • ${seat.tier} • $${seat.price}${
-                                seat.isHeld ? ' (Held)' : seat.isBooked ? ' (Booked)' : ''
+                              title={`${seat.code} • ${seat.tier} Tier • $${seat.price}${
+                                seat.isHeld ? ' (Held)' : seat.isBooked ? ' (Booked)' : ' (Available)'
                               }`}
                               className={`w-9 h-9 rounded-xl text-xs font-semibold font-mono flex items-center justify-center transition-all cursor-pointer relative group ${
                                 seat.isBooked
-                                  ? 'bg-red-500 hover:bg-red-600 text-white border border-red-600 shadow-xs cursor-not-allowed font-extrabold'
+                                  ? 'bg-red-500 hover:bg-red-600 text-white border-2 border-red-600 shadow-xs cursor-not-allowed font-extrabold'
                                   : seat.isHeld && !isSelected
-                                  ? 'bg-amber-400 text-slate-950 border border-amber-500 cursor-not-allowed animate-pulse font-bold shadow-xs'
+                                  ? 'bg-amber-400 text-slate-950 border-2 border-amber-500 cursor-not-allowed animate-pulse font-bold shadow-xs'
                                   : isLockedForMe
-                                  ? 'bg-emerald-600 text-white shadow-md scale-105 border border-emerald-700 font-extrabold ring-2 ring-emerald-400/40'
+                                  ? 'bg-emerald-600 text-white shadow-md scale-105 border-2 border-emerald-700 font-extrabold ring-2 ring-emerald-400/40'
                                   : isSelected
-                                  ? 'bg-indigo-600 text-white shadow-md scale-105 border border-indigo-700 font-extrabold ring-2 ring-indigo-400/40'
+                                  ? 'bg-indigo-600 text-white shadow-md scale-105 border-2 border-indigo-700 font-extrabold ring-2 ring-indigo-400/40'
                                   : seat.tier === 'VIP'
-                                  ? 'bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-400 font-bold shadow-2xs'
+                                  ? 'bg-amber-100 hover:bg-amber-200 text-amber-950 border-2 border-amber-400 font-bold shadow-xs'
                                   : seat.tier === 'Premium'
-                                  ? 'bg-purple-200 hover:bg-purple-300 text-purple-950 border border-purple-400 font-bold shadow-2xs'
-                                  : seat.tier === 'Recliner'
-                                  ? 'bg-pink-200 hover:bg-pink-300 text-pink-950 border border-pink-400 font-bold shadow-2xs'
-                                  : 'bg-slate-200 hover:bg-slate-300 text-slate-900 border border-slate-400 font-bold shadow-2xs'
+                                  ? 'bg-purple-100 hover:bg-purple-200 text-purple-950 border-2 border-purple-400 font-bold shadow-xs'
+                                  : 'bg-sky-50 hover:bg-sky-100 text-sky-950 border-2 border-sky-300 font-bold shadow-xs'
                               }`}
                             >
                               {isLockedForMe ? (
@@ -518,42 +656,64 @@ export const SeatSelectionPage = () => {
                           );
                         })}
                       </div>
-                      <span className="w-6 text-xs font-bold font-mono text-slate-400 text-center">
+
+                      {/* Right Row Letter */}
+                      <span className="w-5 text-xs font-bold font-mono text-slate-400 text-center">
                         {rowLetter}
                       </span>
+
+                      {/* Right Price Indicator */}
+                      <div className="w-16 text-left pl-1">
+                        <span className="text-xs font-bold font-mono text-slate-500">
+                          ${rowPrice}
+                        </span>
+                      </div>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Seat Legend */}
-              <div className="flex flex-wrap items-center justify-center gap-5 mt-10 pt-6 border-t border-slate-100 text-xs text-slate-600">
+              {/* Seat Legend - Dynamically shows only actual existing tiers */}
+              <div className="flex flex-wrap items-center justify-center gap-5 mt-10 pt-6 border-t border-slate-200 text-xs text-slate-600">
+                {tierSummary.map((t) => {
+                  const isVIP = t.tier === 'VIP';
+                  const isPrem = t.tier === 'Premium';
+
+                  return (
+                    <div key={t.tier} className="flex items-center gap-2">
+                      <div
+                        className={`w-4 h-4 rounded-md border-2 shadow-2xs ${
+                          isVIP
+                            ? 'bg-amber-100 border-amber-400'
+                            : isPrem
+                            ? 'bg-purple-100 border-purple-400'
+                            : 'bg-sky-50 border-sky-300'
+                        }`}
+                      />
+                      <span className="font-bold text-slate-800">
+                        {t.tier} (${t.price})
+                      </span>
+                    </div>
+                  );
+                })}
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-md bg-slate-200 border border-slate-400 shadow-2xs" />
-                  <span className="font-semibold text-slate-700">Available</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-md bg-amber-200 border border-amber-400 shadow-2xs" />
-                  <span className="font-semibold text-slate-700">VIP</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-md bg-purple-200 border border-purple-400 shadow-2xs" />
-                  <span className="font-semibold text-slate-700">Premium</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-md bg-indigo-600 border border-indigo-700 shadow-2xs" />
+                  <div className="w-4 h-4 rounded-md bg-indigo-600 border-2 border-indigo-700 shadow-2xs text-white text-[8px] flex items-center justify-center font-bold">
+                    ✓
+                  </div>
                   <span className="font-bold text-indigo-700">Selected</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-md bg-emerald-600 border border-emerald-700 shadow-2xs" />
+                  <div className="w-4 h-4 rounded-md bg-emerald-600 border-2 border-emerald-700 shadow-2xs text-white text-[8px] flex items-center justify-center font-bold">
+                    🔒
+                  </div>
                   <span className="font-bold text-emerald-700">Held by You</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-md bg-amber-400 border border-amber-500 shadow-2xs" />
+                  <div className="w-4 h-4 rounded-md bg-amber-400 border-2 border-amber-500 shadow-2xs" />
                   <span className="font-semibold text-slate-700">Held by Others</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-md bg-red-500 border border-red-600 shadow-2xs text-white text-[8px] flex items-center justify-center font-bold">
+                  <div className="w-4 h-4 rounded-md bg-red-500 border-2 border-red-600 shadow-2xs text-white text-[8px] flex items-center justify-center font-bold">
                     ✕
                   </div>
                   <span className="font-bold text-red-600">Booked</span>
@@ -606,10 +766,15 @@ export const SeatSelectionPage = () => {
                   {selectedSeatObjects.map((s) => (
                     <span
                       key={s.code}
-                      className="px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-mono font-bold flex items-center gap-1"
+                      className="px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-mono font-bold flex items-center gap-1.5 shadow-2xs"
                     >
                       <span>{isGeneralAdmission ? `Ticket #${s.num}` : s.code}</span>
-                      <span className="text-[10px] text-indigo-500 font-normal">(${s.price})</span>
+                      <span className="text-[9px] uppercase px-1 rounded bg-indigo-100/90 text-indigo-800 font-bold">
+                        {s.tier}
+                      </span>
+                      <span className="text-[11px] text-indigo-900 font-extrabold font-mono">
+                        ${s.price}
+                      </span>
                     </span>
                   ))}
                 </div>

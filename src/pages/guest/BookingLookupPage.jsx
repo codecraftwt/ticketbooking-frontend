@@ -137,11 +137,11 @@ export const BookingLookupPage = () => {
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center p-1.5">
-                <QrCode className="w-9 h-9 text-slate-800" />
+                <Ticket className="w-6 h-6 text-indigo-600" />
               </div>
               <div className="text-xs">
                 <p className="font-bold text-slate-900">Digital Admission Pass</p>
-                <p className="text-[11px] text-slate-500">Scan at entrance scanner on arrival.</p>
+                <p className="text-[11px] text-slate-500">Present booking reference at entrance on arrival.</p>
               </div>
             </div>
 

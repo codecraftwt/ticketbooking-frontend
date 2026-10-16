@@ -142,10 +142,9 @@ export const BookingConfirmationPage = () => {
             </div>
           </div>
 
-          {/* Details Grid & Admission QR Code */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-center">
-            {/* Left 2 Cols: Details */}
-            <div className="sm:col-span-2 grid grid-cols-2 gap-4 text-xs">
+          {/* Details Grid (QR code section commented out) */}
+          <div className="grid grid-cols-1 gap-6 items-center">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
               <div className="space-y-1">
                 <span className="text-slate-400 block font-medium">Guest Name</span>
                 <span className="font-semibold text-slate-900 text-sm">
@@ -176,7 +175,7 @@ export const BookingConfirmationPage = () => {
                 </span>
               </div>
 
-              <div className="col-span-2 pt-3 border-t border-slate-100 space-y-1.5">
+              <div className="col-span-2 sm:col-span-4 pt-3 border-t border-slate-100 space-y-1.5">
                 <span className="text-slate-500 block font-semibold">Confirmed Seat Allocations</span>
                 <div className="flex flex-wrap gap-1.5">
                   {booking.seats?.map((seatCode) => (
@@ -191,7 +190,8 @@ export const BookingConfirmationPage = () => {
               </div>
             </div>
 
-            {/* Right Col: QR Code */}
+            {/* QR Code section commented out as requested */}
+            {/*
             <div className="flex flex-col items-center justify-center p-5 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-2">
               {booking.qrCode ? (
                 <img
@@ -208,13 +208,14 @@ export const BookingConfirmationPage = () => {
                 Gate Admission QR
               </span>
             </div>
+            */}
           </div>
 
           {/* Footer of card */}
           <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <div className="flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>Valid for entrance. Present this QR code on arrival at the gate scanner.</span>
+              <span>Valid for entrance. Present this ticket reference at the entrance.</span>
             </div>
             <span className="font-mono text-[11px] text-slate-400">
               {new Date(booking.date || Date.now()).toLocaleDateString()}
