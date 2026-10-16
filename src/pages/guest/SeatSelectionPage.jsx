@@ -15,8 +15,10 @@ import {
   Lock,
   Unlock,
   Users,
+  ChevronRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Card, Badge, Button } from '../../components/ui';
 
 export const SeatSelectionPage = () => {
   const { id } = useParams(); // Show ID
@@ -98,7 +100,7 @@ export const SeatSelectionPage = () => {
   }, [activeHold, secondsRemaining]);
 
   const handleHoldExpired = () => {
-    toast.error('Your 5-minute seat reservation has expired. Seats have been returned to available inventory.');
+    toast.error('Your 5-minute seat reservation has expired. Seats returned to inventory.');
     setActiveHold(null);
     setSelectedSeatCodes([]);
     fetchShowData();
@@ -245,7 +247,7 @@ export const SeatSelectionPage = () => {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-        <p className="text-xs text-slate-500">Loading interactive seat layout...</p>
+        <p className="text-xs text-slate-500 font-medium">Loading interactive auditorium seat map...</p>
       </div>
     );
   }
@@ -254,20 +256,18 @@ export const SeatSelectionPage = () => {
   const uniqueRows = [...new Set(seats.map((s) => s.row))];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Active Hold Countdown Banner */}
       {activeHold && (
-        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 shadow-xs relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-300 shadow-sm relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 flex-shrink-0 animate-pulse">
               <Timer className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm text-amber-900">Seats Reserved Exclusively for You</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-100 text-amber-800 border border-amber-300">
-                  Live Hold Active
-                </span>
+                <Badge variant="warning">Hold Active</Badge>
               </div>
               <p className="text-xs text-amber-700 mt-0.5">
                 Complete your checkout before the timer expires to secure your tickets.
@@ -284,13 +284,14 @@ export const SeatSelectionPage = () => {
                 {formatTimer(secondsRemaining)}
               </span>
             </div>
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleReleaseSeats}
-              className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
+              leftIcon={Unlock}
             >
-              <Unlock className="w-3.5 h-3.5" />
-              <span>Release Seats</span>
-            </button>
+              Release Seats
+            </Button>
           </div>
 
           {/* Animated Progress Bar */}
@@ -314,22 +315,22 @@ export const SeatSelectionPage = () => {
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
+              <Badge variant="default">
                 {show?.eventId?.category || show?.category || 'Feature'}
-              </span>
+              </Badge>
               <span className="text-xs text-slate-500 font-medium">
-                {show?.venueId?.name || show?.venue || 'Grand IMAX'} • {show?.hallId?.name || 'Screen 1'}
+                {show?.venueId?.name || show?.venue || 'Grand Theater'} • {show?.hallId?.name || 'Screen 1'}
               </span>
             </div>
             <h1 className="text-2xl font-bold font-['Outfit'] text-slate-900 mt-1">
-              {show?.eventId?.title || show?.title || 'Live Experience'}
+              {show?.eventId?.title || show?.title || 'Interactive Seat Selection'}
             </h1>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-right shadow-2xs">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-medium">Showtime</span>
+          <div className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-right shadow-2xs">
+            <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">Showtime</span>
             <span className="text-xs font-bold text-slate-900">
               {startDate
                 ? startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -346,10 +347,10 @@ export const SeatSelectionPage = () => {
       {/* Main Grid: Interactive Seat Canvas & Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Seat Map Viewport (3 Columns) */}
-        <div className="lg:col-span-3 p-6 sm:p-8 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col items-center">
+        <Card className="lg:col-span-3 p-6 sm:p-10 flex flex-col items-center">
           {/* Screen / Stage Indicator */}
           <div className="w-full max-w-lg mb-12 text-center">
-            <div className="h-2 w-full bg-slate-300 rounded-full shadow-xs mb-2" />
+            <div className="h-2.5 w-full bg-gradient-to-r from-slate-200 via-indigo-300 to-slate-200 rounded-full shadow-inner mb-2" />
             <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500 font-mono">
               {show?.layout?.stage?.label || '70MM IMAX LASER CURVED SCREEN'}
             </span>
@@ -412,18 +413,18 @@ export const SeatSelectionPage = () => {
           </div>
 
           {/* Seat Legend */}
-          <div className="flex flex-wrap items-center justify-center gap-5 mt-10 pt-6 border-t border-slate-100 text-xs text-slate-600">
+          <div className="flex flex-wrap items-center justify-center gap-6 mt-10 pt-6 border-t border-slate-100 text-xs text-slate-600">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-md bg-slate-100 border border-slate-300" />
               <span>Available</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-md bg-indigo-600 border border-indigo-600" />
-              <span className="font-medium text-slate-800">Selected</span>
+              <span className="font-semibold text-slate-800">Selected</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-md bg-emerald-600 border border-emerald-600" />
-              <span className="font-medium text-slate-800">Held by You</span>
+              <span className="font-semibold text-slate-800">Held by You</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-md bg-amber-100 border border-amber-300" />
@@ -434,28 +435,28 @@ export const SeatSelectionPage = () => {
               <span>Booked</span>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Order Summary & Checkout Trigger (1 Column) */}
-        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between space-y-6">
+        <Card className="p-6 flex flex-col justify-between space-y-6">
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h2 className="text-base font-bold font-['Outfit'] text-slate-900">Booking Summary</h2>
-              <span className="text-[11px] font-semibold text-slate-500">
+              <Badge variant="secondary">
                 {selectedSeatCodes.length} {selectedSeatCodes.length === 1 ? 'Seat' : 'Seats'}
-              </span>
+              </Badge>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
               <div className="flex items-center justify-between text-slate-700 font-semibold">
                 <span className="flex items-center gap-1.5">
                   <Ticket className="w-4 h-4 text-indigo-600" />
                   <span>Selected Seats</span>
                 </span>
                 {activeHold && (
-                  <span className="text-[10px] text-emerald-700 font-mono font-bold flex items-center gap-1">
+                  <Badge variant="success" className="text-[10px]">
                     <CheckCircle2 className="w-3 h-3" /> Locked
-                  </span>
+                  </Badge>
                 )}
               </div>
 
@@ -468,10 +469,10 @@ export const SeatSelectionPage = () => {
                   {selectedSeatObjects.map((s) => (
                     <span
                       key={s.code}
-                      className="px-2 py-0.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-mono font-bold flex items-center gap-1"
+                      className="px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-mono font-bold flex items-center gap-1"
                     >
                       <span>{s.code}</span>
-                      <span className="text-[10px] text-indigo-500">(${s.price})</span>
+                      <span className="text-[10px] text-indigo-500 font-normal">(${s.price})</span>
                     </span>
                   ))}
                 </div>
@@ -487,56 +488,51 @@ export const SeatSelectionPage = () => {
                 <span>Service & Facility Fee</span>
                 <span className="font-semibold text-slate-900">${facilityFee.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-slate-100">
+              <div className="flex justify-between text-sm font-bold text-slate-900 pt-3 border-t border-slate-100">
                 <span>Total Due</span>
                 <span className="text-emerald-700 font-mono text-base font-extrabold">${totalPrice.toFixed(2)}</span>
               </div>
             </div>
 
             {/* Hold status info */}
-            <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-[11px] text-indigo-900 flex items-start gap-2">
+            <div className="p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 text-[11px] text-indigo-900 flex items-start gap-2">
               <Clock className="w-4 h-4 flex-shrink-0 mt-0.5 text-indigo-600" />
               <span>
                 {activeHold
                   ? `Seats are temporarily locked for ${formatTimer(secondsRemaining)}. Complete payment before timer runs out.`
-                  : 'Clicking "Reserve & Pay" atomically locks your seats for 5 minutes during Stripe checkout.'}
+                  : 'Clicking "Lock Seats" temporarily reserves your inventory for 5 minutes during Stripe checkout.'}
               </span>
             </div>
           </div>
 
           {/* Action Button: Reserve Hold or Proceed to Stripe Checkout */}
-          <div className="space-y-2">
+          <div className="space-y-2 pt-4">
             {!activeHold ? (
-              <button
-                type="button"
+              <Button
+                variant="primary"
+                size="lg"
+                className="w-full"
                 onClick={handleLockSeats}
                 disabled={selectedSeatCodes.length === 0 || holding}
-                className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold text-xs shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                isLoading={holding}
+                leftIcon={Lock}
               >
-                {holding ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Locking Seats in Realtime...</span>
-                  </>
-                ) : (
-                  <>
-                    <Lock className="w-4 h-4" />
-                    <span>Lock Seats for 5 Minutes</span>
-                  </>
-                )}
-              </button>
+                Lock Seats for 5 Minutes
+              </Button>
             ) : (
-              <button
-                type="button"
+              <Button
+                variant="success"
+                size="lg"
+                className="w-full"
                 onClick={() => navigate(`/checkout/${activeHold.holdId}`)}
-                className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                leftIcon={ShieldCheck}
+                rightIcon={ChevronRight}
               >
-                <ShieldCheck className="w-4 h-4" />
-                <span>Proceed to Stripe Checkout ({formatTimer(secondsRemaining)})</span>
-              </button>
+                Proceed to Checkout ({formatTimer(secondsRemaining)})
+              </Button>
             )}
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

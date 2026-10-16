@@ -25,6 +25,7 @@ import {
   Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, Badge, Button } from '../../components/ui';
 
 export const AdminSeatDesignerPage = () => {
   const { id } = useParams();
@@ -328,38 +329,38 @@ export const AdminSeatDesignerPage = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Top Header & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs">
         <div className="flex items-center gap-3">
           <Link
             to="/admin/venues"
-            className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs transition-colors"
+            className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
+              <Badge variant="primary">
                 {hall?.screenType}
-              </span>
-              <span className="text-xs text-slate-500 font-medium">{hall?.venueId?.name || 'Venue'}</span>
+              </Badge>
+              <span className="text-xs text-slate-500 font-semibold">{hall?.venueId?.name || 'Venue'}</span>
             </div>
-            <h1 className="text-xl font-bold font-['Outfit'] text-slate-900">
+            <h1 className="text-xl font-extrabold font-['Outfit'] text-slate-900 mt-1">
               Visual Seat Designer: {hall?.name}
             </h1>
           </div>
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
           {/* Mode Toggle */}
           <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
             <button
               type="button"
               onClick={() => setActiveTool('select')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                activeTool === 'select' ? 'bg-white text-indigo-700 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
+              className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                activeTool === 'select' ? 'bg-white text-indigo-700 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Editor Canvas
@@ -367,8 +368,8 @@ export const AdminSeatDesignerPage = () => {
             <button
               type="button"
               onClick={() => setActiveTool('preview')}
-              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
-                activeTool === 'preview' ? 'bg-emerald-600 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
+              className={`px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
+                activeTool === 'preview' ? 'bg-emerald-600 text-white shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <Eye className="w-3.5 h-3.5" />
@@ -376,23 +377,26 @@ export const AdminSeatDesignerPage = () => {
             </button>
           </div>
 
-          <button
+          <Button
+            variant="secondary"
+            size="md"
+            icon={Save}
+            disabled={saving}
             onClick={() => handleSaveLayout(false)}
-            disabled={saving}
-            className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
           >
-            <Save className="w-3.5 h-3.5 text-slate-500" />
-            <span>Save Draft</span>
-          </button>
+            Save Draft
+          </Button>
 
-          <button
-            onClick={() => handleSaveLayout(true)}
+          <Button
+            variant="primary"
+            size="md"
+            icon={Sparkles}
             disabled={saving}
-            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+            loading={saving}
+            onClick={() => handleSaveLayout(true)}
           >
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-            <span>Publish Snapshot (v{layout?.version || 1})</span>
-          </button>
+            Publish Snapshot (v{layout?.version || 1})
+          </Button>
         </div>
       </div>
 

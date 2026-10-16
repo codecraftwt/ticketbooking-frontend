@@ -14,6 +14,7 @@ import {
   CreditCard,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, StatCard, Button, PageHeader, Badge } from '../../components/ui';
 
 export const AdminReportsPage = () => {
   const [analytics, setAnalytics] = useState(null);
@@ -60,7 +61,7 @@ export const AdminReportsPage = () => {
     return (
       <div className="py-24 flex flex-col items-center justify-center gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-        <p className="text-xs text-slate-500">Aggregating live transactions and financial analytics...</p>
+        <p className="text-xs text-slate-500 font-medium">Aggregating live transactions and financial analytics...</p>
       </div>
     );
   }
@@ -75,94 +76,69 @@ export const AdminReportsPage = () => {
   const totalCatRevenue = Object.values(categoryTotals).reduce((a, b) => a + b, 0) || 1;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
-        <div>
-          <h1 className="text-2xl font-bold font-['Outfit'] text-slate-900">Revenue & Financial Reports</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Verified Stripe settlement figures, occupancy metrics, and audit logs.
-          </p>
-        </div>
-        <button
-          onClick={handleDownloadCSV}
-          className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all self-start sm:self-auto cursor-pointer"
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span>Export Financial Statement (CSV)</span>
-        </button>
-      </div>
+      <PageHeader
+        badge="Audited Financial Ledger"
+        badgeVariant="success"
+        title="Revenue & Financial Reports"
+        description="Verified Stripe settlement figures, occupancy metrics, and audit logs."
+        actions={
+          <Button variant="primary" size="md" icon={Download} onClick={handleDownloadCSV}>
+            Export Financial Statement (CSV)
+          </Button>
+        }
+      />
 
       {/* KPI Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Gross Ticket Sales</span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
-              <DollarSign className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold font-['Outfit'] text-slate-900">
-            ${gross.toFixed(2)}
-          </div>
-          <div className="text-xs text-emerald-700 flex items-center gap-1 font-medium">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>All processed Stripe intents</span>
-          </div>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Total Refunds</span>
-            <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
-              <RotateCcw className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold font-['Outfit'] text-rose-700">
-            ${refunded.toFixed(2)}
-          </div>
-          <div className="text-xs text-slate-500">
-            Reversed & restored to seats
-          </div>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Net Settled Revenue</span>
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold font-['Outfit'] text-indigo-700">
-            ${net.toFixed(2)}
-          </div>
-          <div className="text-xs text-slate-500">
-            Gross ticket sales minus refunds
-          </div>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Confirmed Tickets Sold</span>
-            <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
-              <Users className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-3xl font-bold font-['Outfit'] text-slate-900">
-            {tickets} Passes
-          </div>
-          <div className="text-xs text-purple-700 font-semibold">
-            Occupancy: {occupancy}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <StatCard
+          title="Gross Ticket Sales"
+          value={`$${gross.toFixed(2)}`}
+          icon={DollarSign}
+          trend="Stripe Settled"
+          trendLabel="all successful transactions"
+          trendDirection="up"
+          badgeColor="emerald"
+        />
+        <StatCard
+          title="Total Refunds Issued"
+          value={`$${refunded.toFixed(2)}`}
+          icon={RotateCcw}
+          trend="Restored"
+          trendLabel="inventory returned to sales"
+          trendDirection="down"
+          badgeColor="rose"
+        />
+        <StatCard
+          title="Net Settled Revenue"
+          value={`$${net.toFixed(2)}`}
+          icon={TrendingUp}
+          trend="Net Balance"
+          trendLabel="sales minus refunds"
+          trendDirection="up"
+          badgeColor="indigo"
+        />
+        <StatCard
+          title="Tickets Confirmed"
+          value={`${tickets} Passes`}
+          icon={Users}
+          trend={occupancy}
+          trendLabel="overall occupancy"
+          trendDirection="neutral"
+          badgeColor="purple"
+        />
       </div>
 
       {/* Breakdown Grids */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Category Breakdown */}
-        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-4">
-          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Sales by Category</h2>
-          <div className="space-y-3.5">
+        {/* Category Breakdown Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Sales by Experience Category</CardTitle>
+            <CardDescription>Contribution to gross ticket sales across event categories</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             {[
               { label: 'IMAX & Cinema (Movie)', key: 'Movie', color: 'bg-indigo-600' },
               { label: 'Live Concerts & Tours', key: 'Concert', color: 'bg-pink-600' },
@@ -174,12 +150,12 @@ export const AdminReportsPage = () => {
               return (
                 <div key={cat.key}>
                   <div className="flex justify-between text-xs mb-1.5 text-slate-600">
-                    <span>{cat.label}</span>
-                    <span className="font-semibold text-slate-900">
+                    <span className="font-semibold text-slate-700">{cat.label}</span>
+                    <span className="font-mono font-bold text-slate-900">
                       ${amount.toFixed(2)} ({pct}%)
                     </span>
                   </div>
-                  <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden p-0.5">
                     <div
                       style={{ width: `${Math.max(pct, 2)}%` }}
                       className={`h-full ${cat.color} rounded-full transition-all duration-500`}
@@ -188,50 +164,49 @@ export const AdminReportsPage = () => {
                 </div>
               );
             })}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Recent Transactions List */}
-        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Recent Stripe Transactions</h2>
-            <span className="text-[10px] font-semibold text-emerald-700 flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              <ShieldCheck className="w-3.5 h-3.5" /> Verified
-            </span>
-          </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <div>
+              <CardTitle>Recent Stripe Transactions</CardTitle>
+              <CardDescription>Direct webhook verification feed</CardDescription>
+            </div>
+            <Badge variant="success">Verified Stripe</Badge>
+          </CardHeader>
 
-          <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-            {analytics?.recentPayments?.length === 0 ? (
-              <p className="text-xs text-slate-500 italic py-4 text-center">No payment transactions recorded yet.</p>
-            ) : (
-              analytics?.recentPayments?.map((p) => (
-                <div
-                  key={p._id}
-                  className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs"
-                >
-                  <div className="overflow-hidden pr-2">
-                    <p className="font-semibold text-slate-900 truncate font-mono">
-                      {p.stripePaymentIntentId}
-                    </p>
-                    <p className="text-[10px] text-slate-500">
-                      {new Date(p.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {p.paymentMethod}
-                    </p>
+          <CardContent>
+            <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+              {analytics?.recentPayments?.length === 0 ? (
+                <p className="text-xs text-slate-500 italic py-6 text-center">No payment transactions recorded yet.</p>
+              ) : (
+                analytics?.recentPayments?.map((p) => (
+                  <div
+                    key={p._id}
+                    className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs hover:bg-slate-100/70 transition-colors"
+                  >
+                    <div className="overflow-hidden pr-2">
+                      <p className="font-bold text-slate-900 truncate font-mono text-[11px]">
+                        {p.stripePaymentIntentId}
+                      </p>
+                      <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                        {new Date(p.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {p.paymentMethod}
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-mono font-extrabold text-slate-900 text-sm">${(p.amount || 0).toFixed(2)}</p>
+                      <Badge variant={p.status === 'succeeded' ? 'success' : 'danger'}>
+                        {p.status}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="font-bold text-slate-900 font-mono">${(p.amount || 0).toFixed(2)}</p>
-                    <span
-                      className={`text-[9px] font-bold uppercase ${
-                        p.status === 'succeeded' ? 'text-emerald-700' : 'text-rose-700'
-                      }`}
-                    >
-                      {p.status}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
