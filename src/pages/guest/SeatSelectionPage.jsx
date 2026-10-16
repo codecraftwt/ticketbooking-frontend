@@ -16,6 +16,8 @@ import {
   Unlock,
   Users,
   ChevronRight,
+  Plus,
+  Minus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, Badge, Button } from '../../components/ui';
@@ -41,9 +43,9 @@ export const SeatSelectionPage = () => {
   useEffect(() => {
     fetchShowData();
 
-    // Initialize Socket.IO connection
-    const socket = io('/', {
-      path: '/socket.io',
+    // Initialize direct Socket.IO connection to backend (avoids Vite WS proxy ECONNABORTED drops)
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || `${window.location.protocol}//${window.location.hostname}:5000`;
+    const socket = io(socketUrl, {
       transports: ['websocket', 'polling'],
     });
     socketRef.current = socket;
@@ -240,7 +242,25 @@ export const SeatSelectionPage = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Progress percentage (300 seconds default)
+  // Available and General Admission checks
+  const availableSeats = seats.filter((s) => !s.isBooked && !s.isHeld);
+  const isGeneralAdmission =
+    show?.seatingType === 'GeneralAdmission' ||
+    (seats.length > 0 && seats.every((s) => s.row === 'GA'));
+
+  // Quick ticket count helper for General Admission
+  const setGATicketCount = (count) => {
+    if (activeHold) {
+      toast.info('Hold active. Complete checkout or release tickets to change quantity.');
+      return;
+    }
+    const maxAllowed = Math.min(8, availableSeats.length);
+    const targetCount = Math.max(0, Math.min(maxAllowed, count));
+    const picked = availableSeats.slice(0, targetCount).map((s) => s.code);
+    setSelectedSeatCodes(picked);
+  };
+
+  // Progress percentage (300 seconds / 5 minutes default)
   const timerPercentage = Math.round((secondsRemaining / 300) * 100);
 
   if (loading) {
@@ -346,104 +366,219 @@ export const SeatSelectionPage = () => {
 
       {/* Main Grid: Interactive Seat Canvas & Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Seat Map Viewport (3 Columns) */}
+        {/* Seat Map / Ticket Selector Viewport (3 Columns) */}
         <Card className="lg:col-span-3 p-6 sm:p-10 flex flex-col items-center">
-          {/* Screen / Stage Indicator */}
-          <div className="w-full max-w-lg mb-12 text-center">
-            <div className="h-2.5 w-full bg-gradient-to-r from-slate-200 via-indigo-300 to-slate-200 rounded-full shadow-inner mb-2" />
-            <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500 font-mono">
-              {show?.layout?.stage?.label || '70MM IMAX LASER CURVED SCREEN'}
-            </span>
-          </div>
-
-          {/* Seat Grid */}
-          <div className="w-full max-w-2xl space-y-3.5 overflow-x-auto pb-4">
-            {uniqueRows.map((rowLetter) => {
-              const rowSeats = seats.filter((s) => s.row === rowLetter);
-              return (
-                <div key={rowLetter} className="flex items-center justify-center gap-2 min-w-max">
-                  <span className="w-6 text-xs font-bold font-mono text-slate-400 text-center">
-                    {rowLetter}
-                  </span>
-                  <div className="flex gap-2">
-                    {rowSeats.map((seat) => {
-                      const isSelected = selectedSeatCodes.includes(seat.code);
-                      const isLockedForMe = isSelected && activeHold;
-
-                      return (
-                        <button
-                          key={seat.code}
-                          type="button"
-                          onClick={() => toggleSeat(seat)}
-                          disabled={seat.isBooked || (seat.isHeld && !isSelected)}
-                          title={`${seat.code} • ${seat.tier} • $${seat.price}${
-                            seat.isHeld ? ' (Held)' : seat.isBooked ? ' (Booked)' : ''
-                          }`}
-                          className={`w-9 h-9 rounded-xl text-xs font-semibold font-mono flex items-center justify-center transition-all cursor-pointer relative group ${
-                            seat.isBooked
-                              ? 'bg-slate-200 text-slate-400 border border-slate-200 cursor-not-allowed line-through'
-                              : seat.isHeld && !isSelected
-                              ? 'bg-amber-100 text-amber-700 border border-amber-300 cursor-not-allowed animate-pulse'
-                              : isLockedForMe
-                              ? 'bg-emerald-600 text-white shadow-xs scale-105 border border-emerald-600 font-bold'
-                              : isSelected
-                              ? 'bg-indigo-600 text-white shadow-xs scale-105 border border-indigo-600 font-bold'
-                              : seat.tier === 'VIP'
-                              ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200'
-                              : seat.tier === 'Premium'
-                              ? 'bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200'
-                              : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
-                          }`}
-                        >
-                          {isLockedForMe ? (
-                            <Lock className="w-3.5 h-3.5" />
-                          ) : (
-                            <span>{seat.num}</span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <span className="w-6 text-xs font-bold font-mono text-slate-400 text-center">
-                    {rowLetter}
+          {isGeneralAdmission ? (
+            /* General Admission / Open Seating Ticket Selector */
+            <div className="w-full max-w-md mx-auto py-4 text-center space-y-6 animate-in fade-in duration-200">
+              <div className="space-y-2">
+                <Badge variant="success" className="px-3 py-1 text-xs font-bold inline-flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5" />
+                  <span>General Admission • Open Seating</span>
+                </Badge>
+                <h2 className="text-2xl font-extrabold text-slate-900 font-['Outfit']">
+                  Select Number of Persons
+                </h2>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  This event features open admission without assigned seat numbers. Choose your ticket count below.
+                </p>
+                <div className="pt-1">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    {availableSeats.length} Tickets Available
                   </span>
                 </div>
-              );
-            })}
-          </div>
+              </div>
 
-          {/* Seat Legend */}
-          <div className="flex flex-wrap items-center justify-center gap-6 mt-10 pt-6 border-t border-slate-100 text-xs text-slate-600">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-md bg-slate-100 border border-slate-300" />
-              <span>Available</span>
+              {/* Stepper Card */}
+              <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200 max-w-sm mx-auto space-y-5 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Tickets / Persons
+                  </span>
+                  <span className="text-xs text-indigo-600 font-extrabold font-mono">
+                    ${(seats[0]?.price || 20).toFixed(2)} / ticket
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-center gap-6 py-2">
+                  <button
+                    type="button"
+                    onClick={() => setGATicketCount(selectedSeatCodes.length - 1)}
+                    disabled={selectedSeatCodes.length <= 0 || !!activeHold}
+                    className="w-12 h-12 rounded-2xl bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-200 text-slate-700 flex items-center justify-center font-bold shadow-2xs transition-all cursor-pointer"
+                    title="Decrease ticket count"
+                  >
+                    <Minus className="w-5 h-5" />
+                  </button>
+
+                  <div className="w-24 text-center">
+                    <span className="text-4xl font-extrabold font-mono text-slate-900 block">
+                      {selectedSeatCodes.length}
+                    </span>
+                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                      {selectedSeatCodes.length === 1 ? 'Person' : 'Persons'}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setGATicketCount(selectedSeatCodes.length + 1)}
+                    disabled={
+                      selectedSeatCodes.length >= Math.min(8, availableSeats.length) || !!activeHold
+                    }
+                    className="w-12 h-12 rounded-2xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center font-bold shadow-md shadow-indigo-500/20 transition-all cursor-pointer"
+                    title="Increase ticket count"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="flex items-center justify-center gap-2 pt-2 border-t border-slate-200/60">
+                  <span className="text-[11px] text-slate-400 font-medium">Quick Pick:</span>
+                  {[1, 2, 4, 6].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      disabled={num > availableSeats.length || !!activeHold}
+                      onClick={() => setGATicketCount(num)}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        selectedSeatCodes.length === num
+                          ? 'bg-indigo-600 text-white shadow-2xs'
+                          : 'bg-white hover:bg-slate-200/60 text-slate-700 border border-slate-200'
+                      }`}
+                    >
+                      {num} {num === 1 ? 'Person' : 'Persons'}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-md bg-indigo-600 border border-indigo-600" />
-              <span className="font-semibold text-slate-800">Selected</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-md bg-emerald-600 border border-emerald-600" />
-              <span className="font-semibold text-slate-800">Held by You</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-md bg-amber-100 border border-amber-300" />
-              <span>Held by Others</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-md bg-slate-200 border border-slate-300 line-through text-slate-400" />
-              <span>Booked</span>
-            </div>
-          </div>
+          ) : (
+            /* Numbered Seat Map Viewport */
+            <>
+              {/* Screen / Stage Indicator */}
+              <div className="w-full max-w-lg mb-12 text-center">
+                <div className="h-2.5 w-full bg-gradient-to-r from-slate-200 via-indigo-300 to-slate-200 rounded-full shadow-inner mb-2" />
+                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500 font-mono">
+                  {show?.layout?.stage?.label || '70MM IMAX LASER CURVED SCREEN'}
+                </span>
+              </div>
+
+              {/* Seat Grid */}
+              <div className="w-full max-w-2xl space-y-3.5 overflow-x-auto pb-4">
+                {uniqueRows.map((rowLetter) => {
+                  const rowSeats = seats.filter((s) => s.row === rowLetter);
+                  return (
+                    <div key={rowLetter} className="flex items-center justify-center gap-2 min-w-max">
+                      <span className="w-6 text-xs font-bold font-mono text-slate-400 text-center">
+                        {rowLetter}
+                      </span>
+                      <div className="flex gap-2">
+                        {rowSeats.map((seat) => {
+                          const isSelected = selectedSeatCodes.includes(seat.code);
+                          const isLockedForMe = isSelected && activeHold;
+
+                          return (
+                            <button
+                              key={seat.code}
+                              type="button"
+                              onClick={() => toggleSeat(seat)}
+                              disabled={seat.isBooked || (seat.isHeld && !isSelected)}
+                              title={`${seat.code} • ${seat.tier} • $${seat.price}${
+                                seat.isHeld ? ' (Held)' : seat.isBooked ? ' (Booked)' : ''
+                              }`}
+                              className={`w-9 h-9 rounded-xl text-xs font-semibold font-mono flex items-center justify-center transition-all cursor-pointer relative group ${
+                                seat.isBooked
+                                  ? 'bg-red-500 hover:bg-red-600 text-white border border-red-600 shadow-xs cursor-not-allowed font-extrabold'
+                                  : seat.isHeld && !isSelected
+                                  ? 'bg-amber-400 text-slate-950 border border-amber-500 cursor-not-allowed animate-pulse font-bold shadow-xs'
+                                  : isLockedForMe
+                                  ? 'bg-emerald-600 text-white shadow-md scale-105 border border-emerald-700 font-extrabold ring-2 ring-emerald-400/40'
+                                  : isSelected
+                                  ? 'bg-indigo-600 text-white shadow-md scale-105 border border-indigo-700 font-extrabold ring-2 ring-indigo-400/40'
+                                  : seat.tier === 'VIP'
+                                  ? 'bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-400 font-bold shadow-2xs'
+                                  : seat.tier === 'Premium'
+                                  ? 'bg-purple-200 hover:bg-purple-300 text-purple-950 border border-purple-400 font-bold shadow-2xs'
+                                  : seat.tier === 'Recliner'
+                                  ? 'bg-pink-200 hover:bg-pink-300 text-pink-950 border border-pink-400 font-bold shadow-2xs'
+                                  : 'bg-slate-200 hover:bg-slate-300 text-slate-900 border border-slate-400 font-bold shadow-2xs'
+                              }`}
+                            >
+                              {isLockedForMe ? (
+                                <Lock className="w-3.5 h-3.5" />
+                              ) : seat.isBooked ? (
+                                <span>✕</span>
+                              ) : (
+                                <span>{seat.num}</span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <span className="w-6 text-xs font-bold font-mono text-slate-400 text-center">
+                        {rowLetter}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Seat Legend */}
+              <div className="flex flex-wrap items-center justify-center gap-5 mt-10 pt-6 border-t border-slate-100 text-xs text-slate-600">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-md bg-slate-200 border border-slate-400 shadow-2xs" />
+                  <span className="font-semibold text-slate-700">Available</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-md bg-amber-200 border border-amber-400 shadow-2xs" />
+                  <span className="font-semibold text-slate-700">VIP</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-md bg-purple-200 border border-purple-400 shadow-2xs" />
+                  <span className="font-semibold text-slate-700">Premium</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-md bg-indigo-600 border border-indigo-700 shadow-2xs" />
+                  <span className="font-bold text-indigo-700">Selected</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-md bg-emerald-600 border border-emerald-700 shadow-2xs" />
+                  <span className="font-bold text-emerald-700">Held by You</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-md bg-amber-400 border border-amber-500 shadow-2xs" />
+                  <span className="font-semibold text-slate-700">Held by Others</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-md bg-red-500 border border-red-600 shadow-2xs text-white text-[8px] flex items-center justify-center font-bold">
+                    ✕
+                  </div>
+                  <span className="font-bold text-red-600">Booked</span>
+                </div>
+              </div>
+            </>
+          )}
         </Card>
 
         {/* Order Summary & Checkout Trigger (1 Column) */}
         <Card className="p-6 flex flex-col justify-between space-y-6">
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h2 className="text-base font-bold font-['Outfit'] text-slate-900">Booking Summary</h2>
+              <h2 className="text-base font-bold font-['Outfit'] text-slate-900">
+                {isGeneralAdmission ? 'Ticket Summary' : 'Booking Summary'}
+              </h2>
               <Badge variant="secondary">
-                {selectedSeatCodes.length} {selectedSeatCodes.length === 1 ? 'Seat' : 'Seats'}
+                {selectedSeatCodes.length}{' '}
+                {selectedSeatCodes.length === 1
+                  ? isGeneralAdmission
+                    ? 'Person'
+                    : 'Seat'
+                  : isGeneralAdmission
+                  ? 'Persons'
+                  : 'Seats'}
               </Badge>
             </div>
 
@@ -451,7 +586,7 @@ export const SeatSelectionPage = () => {
               <div className="flex items-center justify-between text-slate-700 font-semibold">
                 <span className="flex items-center gap-1.5">
                   <Ticket className="w-4 h-4 text-indigo-600" />
-                  <span>Selected Seats</span>
+                  <span>{isGeneralAdmission ? 'Selected Tickets' : 'Selected Seats'}</span>
                 </span>
                 {activeHold && (
                   <Badge variant="success" className="text-[10px]">
@@ -462,7 +597,9 @@ export const SeatSelectionPage = () => {
 
               {selectedSeatObjects.length === 0 ? (
                 <p className="text-[11px] text-slate-500 italic py-2">
-                  Click seats on the auditorium map to start booking.
+                  {isGeneralAdmission
+                    ? 'Choose number of persons above to proceed.'
+                    : 'Click seats on the auditorium map to start booking.'}
                 </p>
               ) : (
                 <div className="flex flex-wrap gap-1.5 pt-1">
@@ -471,7 +608,7 @@ export const SeatSelectionPage = () => {
                       key={s.code}
                       className="px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-mono font-bold flex items-center gap-1"
                     >
-                      <span>{s.code}</span>
+                      <span>{isGeneralAdmission ? `Ticket #${s.num}` : s.code}</span>
                       <span className="text-[10px] text-indigo-500 font-normal">(${s.price})</span>
                     </span>
                   ))}
@@ -499,8 +636,8 @@ export const SeatSelectionPage = () => {
               <Clock className="w-4 h-4 flex-shrink-0 mt-0.5 text-indigo-600" />
               <span>
                 {activeHold
-                  ? `Seats are temporarily locked for ${formatTimer(secondsRemaining)}. Complete payment before timer runs out.`
-                  : 'Clicking "Lock Seats" temporarily reserves your inventory for 5 minutes during Stripe checkout.'}
+                  ? `Tickets are temporarily locked for ${formatTimer(secondsRemaining)}. Complete payment before timer runs out.`
+                  : 'Clicking lock temporarily reserves your tickets for 5 minutes during Stripe checkout.'}
               </span>
             </div>
           </div>
@@ -517,7 +654,7 @@ export const SeatSelectionPage = () => {
                 isLoading={holding}
                 leftIcon={Lock}
               >
-                Lock Seats for 5 Minutes
+                {isGeneralAdmission ? 'Lock Tickets for 5 Minutes' : 'Lock Seats for 5 Minutes'}
               </Button>
             ) : (
               <Button

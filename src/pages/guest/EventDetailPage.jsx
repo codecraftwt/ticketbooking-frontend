@@ -16,6 +16,8 @@ import {
   Film,
   Building2,
   Info,
+  Mail,
+  Phone,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, Badge, Button } from '../../components/ui';
@@ -174,6 +176,35 @@ export const EventDetailPage = () => {
               </p>
             </div>
           </div>
+
+          {/* Organizer Contact Info */}
+          {(event.contactEmail || event.contactPhone) && (
+            <Card className="p-5 space-y-3">
+              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-400 font-mono">
+                Event Organizer Contact Info
+              </h3>
+              <div className="flex flex-wrap gap-4 text-xs">
+                {event.contactEmail && (
+                  <a
+                    href={`mailto:${event.contactEmail}`}
+                    className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+                  >
+                    <Mail className="w-4 h-4" />
+                    <span>{event.contactEmail}</span>
+                  </a>
+                )}
+                {event.contactPhone && (
+                  <a
+                    href={`tel:${event.contactPhone}`}
+                    className="flex items-center gap-2 text-slate-700 hover:text-slate-900 font-medium transition-colors"
+                  >
+                    <Phone className="w-4 h-4 text-emerald-600" />
+                    <span>{event.contactPhone}</span>
+                  </a>
+                )}
+              </div>
+            </Card>
+          )}
         </div>
 
         {/* Right Column: Showtime Selection & Booking CTA (1 col) */}

@@ -17,10 +17,9 @@ import { BookingLookupPage } from './pages/guest/BookingLookupPage';
 
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
-import { AdminVenuesPage } from './pages/admin/AdminVenuesPage';
 import { AdminSeatDesignerPage } from './pages/admin/AdminSeatDesignerPage';
 import { AdminEventsPage } from './pages/admin/AdminEventsPage';
-import { AdminShowsPage } from './pages/admin/AdminShowsPage';
+import { CreateEventPage } from './pages/admin/CreateEventPage';
 import { AdminBookingsPage } from './pages/admin/AdminBookingsPage';
 import { AdminPaymentsPage } from './pages/admin/AdminPaymentsPage';
 import { AdminReportsPage } from './pages/admin/AdminReportsPage';
@@ -55,12 +54,16 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            <Route index element={<Navigate to="/admin/events" replace />} />
             <Route path="dashboard" element={<AdminDashboardPage />} />
-            <Route path="venues" element={<AdminVenuesPage />} />
-            <Route path="halls/:id/layout" element={<AdminSeatDesignerPage />} />
             <Route path="events" element={<AdminEventsPage />} />
-            <Route path="shows" element={<AdminShowsPage />} />
+            <Route path="events/new" element={<CreateEventPage />} />
+            <Route path="halls/:id/layout" element={<AdminSeatDesignerPage />} />
+            
+            {/* Streamlined Redirects for single-flow architecture */}
+            <Route path="venues" element={<Navigate to="/admin/events" replace />} />
+            <Route path="shows" element={<Navigate to="/admin/events" replace />} />
+
             <Route path="bookings" element={<AdminBookingsPage />} />
             <Route path="payments" element={<AdminPaymentsPage />} />
             <Route path="reports" element={<AdminReportsPage />} />

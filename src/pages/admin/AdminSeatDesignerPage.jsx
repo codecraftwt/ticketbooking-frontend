@@ -56,9 +56,9 @@ export const AdminSeatDesignerPage = () => {
     rowLabel: 'I',
     seatsCount: 12,
     tier: 'Standard',
-    curve: 10,
-    seatSpacing: 52,
-    middleAisleGap: true,
+    curve: 0,
+    seatSpacing: 55,
+    middleAisleGap: false,
   });
 
   const canvasRef = useRef(null);
@@ -353,7 +353,7 @@ export const AdminSeatDesignerPage = () => {
     toast.success(`Updated entire Row ${rowLabel} to ${tier} tier.`);
   };
 
-  // 5. Add New Row Generator (Dynamically positioned below lowest existing row)
+  // 5. Add New Row Generator (Dynamically positioned and horizontally aligned with existing rows)
   const handleAddRow = () => {
     const { rowLabel, seatsCount, tier, curve, seatSpacing, middleAisleGap } = newRowConfig;
     const label = rowLabel.trim().toUpperCase() || 'X';
@@ -365,27 +365,37 @@ export const AdminSeatDesignerPage = () => {
       return;
     }
 
-    // DYNAMIC POSITIONING BUG FIX:
-    // Compute max Y coordinate of all existing seats to avoid overlapping
+    // Determine startX and spacing to guarantee 100% column alignment with existing rows
+    let startX = 195;
+    const spacing = seatSpacing || 55;
+
+    if (layout?.seats && layout.seats.length > 0) {
+      // Align with seat 1 of the first existing row
+      const existingSeat1 = layout.seats.find((s) => s.seatNumber === 1);
+      if (existingSeat1) {
+        startX = existingSeat1.x;
+      }
+    }
+
+    // Compute max Y coordinate of all existing seats to place safely below
     let baseY = 140;
     if (layout?.seats && layout.seats.length > 0) {
       const maxY = Math.max(...layout.seats.map((s) => s.y));
-      baseY = maxY + 65; // Place 65px safely below the lowest existing row
+      baseY = maxY + 60; // Place 60px safely below the lowest existing row
     }
 
-    const startX = 140;
     const newSeats = [];
     const centerIndex = (seatsCount - 1) / 2;
 
     for (let i = 1; i <= seatsCount; i++) {
-      let xOffset = (i - 1) * seatSpacing;
+      let xOffset = (i - 1) * spacing;
       if (middleAisleGap && i > seatsCount / 2) {
         xOffset += 30; // Walkway aisle gap
       }
 
-      // Parabolic curve: delta from center squared
+      // Parabolic curve: only if curve > 0
       const distFromCenter = Math.abs(i - 1 - centerIndex);
-      const curvedY = baseY + (centerIndex > 0 ? Math.pow(distFromCenter / centerIndex, 2) * curve : 0);
+      const curvedY = baseY + (curve > 0 && centerIndex > 0 ? Math.pow(distFromCenter / centerIndex, 2) * curve : 0);
 
       newSeats.push({
         id: `${label}${i}`,
@@ -411,6 +421,42 @@ export const AdminSeatDesignerPage = () => {
     suggestNextRowConfig(nextLayout);
 
     toast.success(`Inserted Row "${label}" with ${seatsCount} seats!`);
+  };
+
+  // 6. Re-align All Existing Rows into Flawless Columns
+  const handleRealignAllRows = () => {
+    if (!layout || !layout.seats || layout.seats.length === 0) return;
+
+    const uniqueRowLabels = [...new Set(layout.seats.map((s) => s.rowLabel))].sort();
+    const startX = 195;
+    const startY = 140;
+    const xSpacing = 55;
+    const ySpacing = 60;
+
+    const realignedSeats = [];
+
+    uniqueRowLabels.forEach((rowLetter, rIdx) => {
+      const rowSeats = layout.seats
+        .filter((s) => s.rowLabel === rowLetter)
+        .sort((a, b) => a.seatNumber - b.seatNumber);
+
+      const rowY = startY + rIdx * ySpacing;
+
+      rowSeats.forEach((seat, sIdx) => {
+        realignedSeats.push({
+          ...seat,
+          seatNumber: sIdx + 1,
+          id: `${rowLetter}${sIdx + 1}`,
+          x: startX + sIdx * xSpacing,
+          y: rowY,
+        });
+      });
+    });
+
+    const nextLayout = { ...layout, seats: realignedSeats };
+    setLayout(nextLayout);
+    pushHistory(nextLayout);
+    toast.success('All rows and columns have been aligned into uniform grid!');
   };
 
   // Save or Publish Snapshot
@@ -606,6 +652,15 @@ export const AdminSeatDesignerPage = () => {
               title="Redo"
             >
               <RotateCw className="w-4 h-4" />
+            </button>
+            <div className="w-px h-4 bg-slate-200 mx-1" />
+            <button
+              onClick={handleRealignAllRows}
+              className="p-1.5 rounded-lg text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 cursor-pointer flex items-center gap-1 text-xs font-semibold"
+              title="Snap & Align All Rows into Uniform Columns"
+            >
+              <Grid className="w-4 h-4" />
+              <span>Align Grid</span>
             </button>
           </div>
 
@@ -987,7 +1042,15 @@ export const AdminSeatDesignerPage = () => {
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
                   Auditorium Rows ({uniqueRows.length})
                 </span>
-                <span className="text-[10px] text-slate-400 font-medium">Add/Reduce/Delete</span>
+                <button
+                  type="button"
+                  onClick={handleRealignAllRows}
+                  className="text-[11px] text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 cursor-pointer bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200"
+                  title="Snap all rows and columns to uniform spacing"
+                >
+                  <Grid className="w-3.5 h-3.5" />
+                  <span>Align All Rows</span>
+                </button>
               </div>
 
               {uniqueRows.length === 0 ? (

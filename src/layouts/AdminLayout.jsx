@@ -17,6 +17,8 @@ import {
   Shield,
   ChevronRight,
   Sparkles,
+  Zap,
+  Plus,
 } from 'lucide-react';
 
 export const AdminLayout = () => {
@@ -35,9 +37,8 @@ export const AdminLayout = () => {
       title: 'Operations & Management',
       items: [
         { label: 'Overview', path: '/admin/dashboard', icon: LayoutDashboard },
-        { label: 'Venues & Halls', path: '/admin/venues', icon: Building2 },
-        { label: 'Events Catalog', path: '/admin/events', icon: Film },
-        { label: 'Show Schedules', path: '/admin/shows', icon: CalendarDays },
+        { label: 'Add Event', path: '/admin/events/new', icon: Plus },
+        { label: 'All Events', path: '/admin/events', icon: Film },
       ],
     },
     {

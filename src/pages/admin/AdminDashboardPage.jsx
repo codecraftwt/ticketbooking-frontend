@@ -14,6 +14,7 @@ import {
   Clock,
   Sparkles,
   ArrowRight,
+  Zap,
 } from 'lucide-react';
 import { StatCard, Card, CardHeader, CardTitle, CardDescription, CardContent, Badge, Button, PageHeader } from '../../components/ui';
 
@@ -79,14 +80,14 @@ export const AdminDashboardPage = () => {
         description="Real-time monitor of ticket reservations, visual hall capacities, and Stripe transactions."
         actions={
           <div className="flex items-center gap-2.5">
-            <Link to="/admin/venues">
-              <Button variant="primary" size="md" icon={Building2}>
-                Manage Venues
+            <Link to="/admin/events">
+              <Button variant="primary" size="md" leftIcon={Zap}>
+                1-Click Publish Event
               </Button>
             </Link>
-            <Link to="/admin/events">
-              <Button variant="secondary" size="md" icon={Film}>
-                Add Event
+            <Link to="/admin/venues">
+              <Button variant="outline" size="md" leftIcon={Building2}>
+                Venues & Auditoriums
               </Button>
             </Link>
           </div>
