@@ -23,6 +23,14 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+const getCleanPosterUrl = (url) => {
+  if (!url) return 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=80';
+  if (url.includes('4027e8f7-32d5-4bbb-abe0-0485f7e5bcd1') && !url.includes('c_crop')) {
+    return 'https://res.cloudinary.com/hxn9dbuhd/image/upload/c_crop,w_604,h_800,x_98,y_0/v1788614706/organizations/8/7/b/1/87b1bd06-30ef-40f7-a87a-d628cc954bde/4027e8f7-32d5-4bbb-abe0-0485f7e5bcd1.png';
+  }
+  return url;
+};
+
 export const EventDetailPage = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -138,18 +146,17 @@ export const EventDetailPage = () => {
           {/* ================= LEFT COLUMN (Compact & Balanced Poster) ================= */}
           <div className="w-full lg:w-[320px] shrink-0 space-y-4">
             
-            {/* Event Poster Card - strictly bounded width/height */}
-            <div className="relative rounded-2xl overflow-hidden shadow-xl border border-amber-900/40 bg-[#281302] w-full max-w-[320px] aspect-[4/5] mx-auto lg:mx-0">
+            {/* Event Poster Card - perfectly fitted edge-to-edge */}
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-amber-900/40 w-full max-w-[320px] mx-auto lg:mx-0">
               <img
-                src={event.posterImage || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=80'}
+                src={getCleanPosterUrl(event.posterImage)}
                 alt={event.title}
-                className="w-full h-full object-cover object-center"
+                className="w-full h-auto object-cover block"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
               
               {/* Category Badge overlay */}
               {event.category && (
-                <div className="absolute top-3 left-3">
+                <div className="absolute top-3 left-3 z-10">
                   <span className="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-black/80 backdrop-blur-md text-amber-300 border border-amber-400/30">
                     {event.category}
                   </span>

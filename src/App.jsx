@@ -25,11 +25,14 @@ import { AdminPaymentsPage } from './pages/admin/AdminPaymentsPage';
 import { AdminReportsPage } from './pages/admin/AdminReportsPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 
+import { ScrollToTop } from './components/common/ScrollToTop';
+
 export default function App() {
   return (
     <AuthProvider>
       <Toaster position="top-right" richColors theme="light" closeButton />
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           {/* Public Guest Routes */}
           <Route element={<GuestLayout />}>
