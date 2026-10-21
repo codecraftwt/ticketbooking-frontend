@@ -253,7 +253,7 @@ export const CreateEventPage = () => {
 
   const updateRowSeatCount = (index, delta) => {
     const updated = [...rowsConfig];
-    const newCount = Math.max(2, Math.min(24, updated[index].seatCount + delta));
+    const newCount = Math.max(2, Math.min(60, updated[index].seatCount + delta));
     updated[index].seatCount = newCount;
     updated[index].disabledSeats = (updated[index].disabledSeats || []).filter((s) => s <= newCount);
     setRowsConfig(updated);
@@ -271,8 +271,8 @@ export const CreateEventPage = () => {
   };
 
   const applyQuickSetup = () => {
-    const rCount = Math.max(1, Math.min(16, quickRows));
-    const sCount = Math.max(4, Math.min(24, quickSeats));
+    const rCount = Math.max(1, Math.min(26, quickRows));
+    const sCount = Math.max(2, Math.min(60, quickSeats));
     const newRows = [];
 
     // Assign tiers evenly across generated rows based on active tiers
@@ -1186,7 +1186,7 @@ export const CreateEventPage = () => {
                         <input
                           type="number"
                           min={1}
-                          max={16}
+                          max={26}
                           value={quickRows}
                           onChange={(e) => setQuickRows(parseInt(e.target.value) || 6)}
                           className="w-14 px-2 py-1 bg-white border border-slate-300 rounded-lg text-slate-900 font-bold text-center"
@@ -1197,8 +1197,8 @@ export const CreateEventPage = () => {
                         <span className="text-slate-500 text-[11px]">Seats / Row:</span>
                         <input
                           type="number"
-                          min={4}
-                          max={24}
+                          min={2}
+                          max={60}
                           value={quickSeats}
                           onChange={(e) => setQuickSeats(parseInt(e.target.value) || 12)}
                           className="w-14 px-2 py-1 bg-white border border-slate-300 rounded-lg text-slate-900 font-bold text-center"
@@ -1333,7 +1333,7 @@ export const CreateEventPage = () => {
                     </div>
 
                     {/* Grid Rows with Dynamic Colors & Click-to-Toggle Aisle Feature */}
-                    <div className="space-y-2 py-2 max-w-2xl mx-auto overflow-x-auto pb-2">
+                    <div className="space-y-2 py-2 w-full max-w-full mx-auto overflow-x-auto pb-3">
                       {rowsConfig.map((row, rIdx) => {
                         const tierObj = activeTiers.find((t) => t.name === row.tier) || activeTiers[0];
                         const disabledList = row.disabledSeats || [];

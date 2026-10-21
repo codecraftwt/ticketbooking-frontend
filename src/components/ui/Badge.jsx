@@ -2,7 +2,7 @@ import React from 'react';
 
 /**
  * Standardized Badge Component
- * Variants: success | danger | warning | primary | neutral | purple
+ * Variants: success | danger | warning | primary | neutral | gold
  * Sizes: sm | md
  */
 export const Badge = ({
@@ -13,22 +13,22 @@ export const Badge = ({
   ...props
 }) => {
   const variantStyles = {
-    success: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-    danger: 'bg-rose-50 text-rose-800 border-rose-200',
-    warning: 'bg-amber-50 text-amber-800 border-amber-200',
-    primary: 'bg-indigo-50 text-indigo-800 border-indigo-200',
-    purple: 'bg-purple-50 text-purple-800 border-purple-200',
-    neutral: 'bg-slate-100 text-slate-700 border-slate-200',
+    success: 'bg-emerald-950/60 text-emerald-300 border-emerald-800/60',
+    danger: 'bg-rose-950/60 text-rose-300 border-rose-800/60',
+    warning: 'bg-amber-950/60 text-amber-300 border-amber-800/60',
+    primary: 'bg-amber-900/40 text-amber-200 border-amber-700/50',
+    gold: 'bg-[#fbc687]/20 text-[#fbc687] border-[#fbc687]/40',
+    neutral: 'bg-stone-800/80 text-stone-300 border-stone-700/60',
   };
 
   const sizeStyles = {
-    sm: 'text-[10px] px-2 py-0.5 tracking-wider uppercase font-bold',
-    md: 'text-xs px-2.5 py-1 font-semibold',
+    sm: 'text-[10px] px-2 py-0.5 tracking-wider uppercase font-extrabold',
+    md: 'text-xs px-2.5 py-1 font-bold',
   };
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border ${variantStyles[variant] || variantStyles.neutral} ${sizeStyles[size] || sizeStyles.md} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-lg border ${variantStyles[variant] || variantStyles.neutral} ${sizeStyles[size] || sizeStyles.md} ${className}`}
       {...props}
     >
       {children}

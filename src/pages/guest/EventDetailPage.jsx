@@ -12,15 +12,16 @@ import {
   ArrowLeft,
   Sparkles,
   Loader2,
-  Tv,
-  Film,
   Building2,
   Info,
   Mail,
   Phone,
+  ExternalLink,
+  Lightbulb,
+  Check,
+  Share2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Card, Badge, Button } from '../../components/ui';
 
 export const EventDetailPage = () => {
   const { slug } = useParams();
@@ -29,6 +30,7 @@ export const EventDetailPage = () => {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedShowId, setSelectedShowId] = useState(null);
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   useEffect(() => {
     fetchEvent();
@@ -53,269 +55,345 @@ export const EventDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-        <p className="text-xs text-slate-500 font-medium">Loading experience details...</p>
+      <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3 text-amber-200">
+        <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
+        <p className="text-xs text-amber-200/70 font-medium">Loading event details...</p>
       </div>
     );
   }
 
   if (!event) {
     return (
-      <div className="max-w-md mx-auto py-24 text-center space-y-4">
-        <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-500">
-          <Film className="w-6 h-6" />
+      <div className="max-w-md mx-auto py-20 text-center space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-amber-950/60 border border-amber-900/60 flex items-center justify-center mx-auto text-amber-400">
+          <Ticket className="w-6 h-6" />
         </div>
-        <h2 className="text-lg font-bold font-['Outfit'] text-slate-900">Event Not Found</h2>
-        <p className="text-xs text-slate-500">
-          The requested experience is either no longer showing or the link has expired.
+        <h2 className="text-lg font-bold font-['Outfit'] text-white">Event Not Found</h2>
+        <p className="text-xs text-stone-300">
+          The requested event could not be found or the link has expired.
         </p>
-        <Link to="/" className="inline-block">
-          <Button variant="outline" size="sm" leftIcon={ArrowLeft}>
-            Return to Discovery Catalog
-          </Button>
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#fbc687] text-[#341602] font-bold text-xs hover:bg-[#fed7aa] transition-all shadow-md"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Return to Events</span>
         </Link>
       </div>
     );
   }
 
-  const selectedShow = event.shows?.find((s) => s._id === selectedShowId);
+  const selectedShow = event.shows?.find((s) => s._id === selectedShowId) || event.shows?.[0];
+  const startDate = selectedShow?.startTime ? new Date(selectedShow.startTime) : new Date();
+
+  const monthShort = startDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+  const dayNum = startDate.getDate();
+  const formattedDate = startDate.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+  const formattedTime = startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+  const venueName = selectedShow?.venueId?.name || event.venue || 'Main Auditorium Hall';
+  const venueLocation = selectedShow?.venueId?.city
+    ? `${selectedShow.venueId.city}, ${selectedShow.venueId.state || 'TX'}`
+    : 'Auditorium Arena';
+
+  const minPrice = selectedShow?.pricing?.length
+    ? Math.min(...selectedShow.pricing.map((p) => p.price))
+    : event.price || 10;
 
   return (
-    <div className="space-y-8 pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-      {/* Back Navigation */}
-      <div>
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-indigo-600 bg-white hover:bg-slate-50 px-3.5 py-1.5 rounded-full border border-slate-200 transition-colors shadow-2xs"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to All Events</span>
-        </Link>
-      </div>
+    <div className="w-full text-stone-100 font-['Plus_Jakarta_Sans'] py-6 sm:py-8">
+      {/* Proportionally balanced container (max-w-5xl matches Zeffy reference) */}
+      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 space-y-5">
+        
+        {/* Top Minimal Navigation Bar */}
+        <div className="flex items-center justify-between">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-200/80 hover:text-white transition-colors group"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1 text-amber-400" />
+            <span>All Events</span>
+          </Link>
 
-      {/* Cinematic Hero Card */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-xl border border-slate-800 p-6 sm:p-10">
-        <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-8">
-          {/* Event Poster with Glow */}
-          <div className="w-48 sm:w-56 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl ring-4 ring-white/10 flex-shrink-0 bg-slate-800">
-            <img
-              src={event.posterImage}
-              alt={event.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard?.writeText(window.location.href);
+              toast.success('Event link copied to clipboard');
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-amber-200 transition-colors cursor-pointer"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            <span>Share</span>
+          </button>
+        </div>
 
-          {/* Event Details Header */}
-          <div className="space-y-4 flex-1 text-center md:text-left">
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-              <span className="px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-indigo-500/30 text-indigo-300 border border-indigo-400/30">
-                {event.category || 'Concert'}
-              </span>
+        {/* Main 2-Column Layout with proper proportions */}
+        <div className="flex flex-col lg:flex-row gap-7 lg:gap-9 items-start">
+          
+          {/* ================= LEFT COLUMN (Compact & Balanced Poster) ================= */}
+          <div className="w-full lg:w-[320px] shrink-0 space-y-4">
+            
+            {/* Event Poster Card - strictly bounded width/height */}
+            <div className="relative rounded-2xl overflow-hidden shadow-xl border border-amber-900/40 bg-[#281302] w-full max-w-[320px] aspect-[4/5] mx-auto lg:mx-0">
+              <img
+                src={event.posterImage || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=80'}
+                alt={event.title}
+                className="w-full h-full object-cover object-center"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+              
+              {/* Category Badge overlay */}
+              {event.category && (
+                <div className="absolute top-3 left-3">
+                  <span className="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-black/80 backdrop-blur-md text-amber-300 border border-amber-400/30">
+                    {event.category}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Hosted By Row */}
+            <div className="flex items-center gap-3 pt-1">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-700 to-amber-500 border border-amber-400/40 flex items-center justify-center text-white shrink-0 shadow-sm">
+                <Building2 className="w-4 h-4 text-white" />
+              </div>
+              <div className="leading-snug truncate">
+                <span className="text-[10px] text-amber-200/70 block font-medium">Hosted by</span>
+                <div className="flex items-center gap-1 font-bold text-xs sm:text-sm text-white hover:text-amber-300 transition-colors cursor-pointer truncate">
+                  <span className="truncate">{venueName}</span>
+                  <ExternalLink className="w-3 h-3 text-amber-400/80 shrink-0" />
+                </div>
+              </div>
+            </div>
+
+            {/* About this Event */}
+            <div className="pt-3 border-t border-amber-900/40 space-y-1.5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-200/80 font-['Outfit']">
+                About this event
+              </h3>
+              <p
+                className={`text-xs text-stone-300 leading-relaxed ${
+                  showFullDescription ? '' : 'line-clamp-4'
+                }`}
+              >
+                {event.description ||
+                  'Join us for an unforgettable live performance. Book your verified admission tickets directly with instant seating allocation.'}
+              </p>
+              {event.description && event.description.length > 160 && (
+                <button
+                  type="button"
+                  onClick={() => setShowFullDescription(!showFullDescription)}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 hover:text-amber-300 transition-colors cursor-pointer pt-0.5"
+                >
+                  <span>{showFullDescription ? 'Show less' : 'More details'}</span>
+                  <ExternalLink className="w-2.5 h-2.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Event Meta Badges */}
+            <div className="flex flex-wrap gap-1.5 pt-1">
               {event.genre && (
-                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-white/10 text-slate-300 border border-white/15">
+                <span className="px-2 py-0.5 rounded-md bg-amber-950/60 border border-amber-800/40 text-amber-200 text-[11px] font-semibold">
                   {event.genre}
                 </span>
               )}
               {event.durationMinutes && (
-                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-white/10 text-slate-300 border border-white/15 flex items-center gap-1.5">
-                  <Clock className="w-3 h-3 text-slate-400" />
+                <span className="px-2 py-0.5 rounded-md bg-amber-950/60 border border-amber-800/40 text-amber-200 text-[11px] font-semibold flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-amber-400" />
                   <span>{event.durationMinutes} mins</span>
                 </span>
               )}
               {event.ageRating && (
-                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30">
+                <span className="px-2 py-0.5 rounded-md bg-amber-950/60 border border-amber-800/40 text-amber-200 text-[11px] font-semibold">
                   Rated {event.ageRating}
                 </span>
               )}
             </div>
-
-            <h1
-              style={{ color: '#ffffff' }}
-              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-['Outfit'] tracking-tight text-white leading-tight drop-shadow-sm"
-            >
-              {event.title}
-            </h1>
-
-            {/* Quick Location & Venue */}
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-xs text-slate-200 pt-1">
-              {event.shows?.[0]?.venueId?.name && (
-                <div className="flex items-center gap-1.5 font-semibold text-slate-200">
-                  <MapPin className="w-4 h-4 text-rose-400" />
-                  <span>{event.shows[0].venueId.name}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
-                <ShieldCheck className="w-4 h-4" />
-                <span>100% Verified Tickets</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Main Content Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Description & Venue Details (2 cols) */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* About Event */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-4">
-            <h2 className="text-lg font-bold font-['Outfit'] text-slate-900 flex items-center gap-2">
-              <Info className="w-5 h-5 text-indigo-600" />
-              <span>About the Event</span>
-            </h2>
-            <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-line space-y-2">
-              {event.description}
-            </div>
           </div>
 
-          {/* Venue & Organizer Details Card */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-4">
-            <h3 className="text-sm font-bold font-['Outfit'] text-slate-900 flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-indigo-600" />
-              <span>Venue & Location Information</span>
-            </h3>
+          {/* ================= RIGHT COLUMN (Proper, Sleek Proportions) ================= */}
+          <div className="flex-1 min-w-0 space-y-4">
+            
+            {/* Event Title - Scaled properly */}
+            <div>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-['Outfit'] text-white tracking-tight leading-snug">
+                {event.title}
+              </h1>
+            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
-                <span className="text-slate-400 font-medium block">Auditorium / Venue</span>
-                <span className="font-bold text-slate-900 text-sm">
-                  {event.shows?.[0]?.venueId?.name || 'Main Event Hall'}
-                </span>
-                {event.shows?.[0]?.venueId?.city && (
-                  <span className="text-slate-500 block">
-                    {event.shows[0].venueId.city}, {event.shows[0].venueId.state}
+            {/* Date & Location Info Blocks - Compact & refined */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              
+              {/* Date Box with Compact Calendar Tile */}
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-[#321703]/80 border border-amber-900/40 shadow-xs">
+                <div className="w-10 h-11 rounded-lg bg-[#522906] border border-amber-800/60 flex flex-col items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                  <span className="text-[9px] font-black uppercase text-amber-200 tracking-wider bg-amber-900/60 w-full text-center py-0.5">
+                    {monthShort}
                   </span>
-                )}
+                  <span className="text-sm font-black text-white leading-tight py-0.5">
+                    {dayNum}
+                  </span>
+                </div>
+                <div className="leading-snug truncate">
+                  <span className="font-bold text-xs sm:text-sm text-white block truncate">
+                    {formattedDate}
+                  </span>
+                  <span className="text-[11px] text-stone-300 font-medium block truncate">
+                    {formattedTime}
+                  </span>
+                </div>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
-                <span className="text-slate-400 font-medium block">Hall & Projection</span>
-                <span className="font-bold text-slate-900 text-sm">
-                  {event.shows?.[0]?.hallId?.name || 'Screen 1'}
-                </span>
-                <span className="text-indigo-600 font-semibold block">
-                  {event.shows?.[0]?.hallId?.screenType || 'Standard Digital'}
-                </span>
+              {/* Location Box with Compact MapPin */}
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-[#321703]/80 border border-amber-900/40 shadow-xs">
+                <div className="w-10 h-11 rounded-lg bg-[#522906] border border-amber-800/60 flex items-center justify-center text-amber-300 shrink-0 shadow-inner">
+                  <MapPin className="w-4 h-4" />
+                </div>
+                <div className="leading-snug truncate">
+                  <span className="font-bold text-xs sm:text-sm text-white block truncate">
+                    {venueName}
+                  </span>
+                  <span className="text-[11px] text-stone-300 font-medium block truncate">
+                    {venueLocation}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Organizer Contact Row */}
-            {(event.contactEmail || event.contactPhone) && (
-              <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center gap-4 text-xs text-slate-600">
-                <span className="font-medium text-slate-400">Organizer:</span>
-                {event.contactEmail && (
-                  <a
-                    href={`mailto:${event.contactEmail}`}
-                    className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
-                  >
-                    <Mail className="w-3.5 h-3.5" />
-                    <span>{event.contactEmail}</span>
-                  </a>
-                )}
-                {event.contactPhone && (
-                  <a
-                    href={`tel:${event.contactPhone}`}
-                    className="flex items-center gap-1.5 text-slate-700 hover:text-slate-900 font-medium transition-colors"
-                  >
-                    <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>{event.contactPhone}</span>
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Clean Guarantee Note */}
-          <div className="p-4 rounded-xl bg-emerald-50/80 border border-emerald-200/80 flex items-center gap-3 text-xs text-emerald-800">
-            <ShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-            <span>
-              <strong>Guaranteed Admission:</strong> Official digital tickets with instant seat hold. Free cancellation available up to 4 hours before showtime.
-            </span>
-          </div>
-        </div>
-
-        {/* Right Column: Showtime Selector & Booking CTA */}
-        <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-5 sticky top-24">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-base text-slate-900 font-['Outfit']">
-                Available Showtimes
-              </h3>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                {event.shows?.length || 0} Scheduled
-              </span>
-            </div>
-
-            {event.shows?.length === 0 ? (
-              <div className="py-8 text-center space-y-2">
-                <p className="text-xs text-slate-500 italic">
-                  No showtimes currently scheduled. Please check back soon!
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {event.shows?.map((show) => {
-                  const startDate = new Date(show.startTime);
-                  const isSelected = selectedShowId === show._id;
-                  const minPrice = show.pricing?.length
-                    ? Math.min(...show.pricing.map((p) => p.price))
-                    : 20;
-
-                  return (
-                    <div
-                      key={show._id}
-                      onClick={() => setSelectedShowId(show._id)}
-                      className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-gradient-to-r from-indigo-50/90 to-purple-50/60 border-indigo-500 ring-2 ring-indigo-500/20 shadow-xs'
-                          : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/70'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-extrabold text-slate-900">
-                          {startDate.toLocaleDateString('en-US', {
-                            weekday: 'short',
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </span>
-                        <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
-                          From ${minPrice}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-xs text-slate-500">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-indigo-700">
-                            {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {/* Showtime Picker (if multiple shows exist) */}
+            {event.shows && event.shows.length > 1 && (
+              <div className="space-y-1.5 pt-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-amber-200/80 block">
+                  Select Showtime:
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {event.shows.map((show) => {
+                    const sDate = new Date(show.startTime);
+                    const isSelected = selectedShowId === show._id;
+                    return (
+                      <button
+                        key={show._id}
+                        type="button"
+                        onClick={() => setSelectedShowId(show._id)}
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+                          isSelected
+                            ? 'bg-[#5a2e07] border-amber-400 ring-2 ring-amber-400/30 text-white'
+                            : 'bg-[#321703]/60 border-amber-900/40 text-stone-300 hover:bg-[#401f05]'
+                        }`}
+                      >
+                        <div className="truncate">
+                          <span className="font-bold text-xs block text-white">
+                            {sDate.toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
                           </span>
-                          <span>•</span>
-                          <span>{show.hallId?.name || 'Screen 1'}</span>
+                          <span className="text-[10px] text-amber-300 truncate block">
+                            {sDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} •{' '}
+                            {show.hallId?.name || 'Screen 1'}
+                          </span>
                         </div>
-                        <span className="px-2 py-0.5 rounded-md bg-white text-slate-700 font-semibold text-[10px] border border-slate-200">
-                          {show.hallId?.screenType || 'Standard'}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
+                        {isSelected && <Check className="w-3.5 h-3.5 text-amber-300 shrink-0 ml-1" />}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
-            {/* Select Seats CTA Button */}
-            {selectedShow && (
-              <Button
-                variant="primary"
-                size="lg"
-                className="w-full justify-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 shadow-md shadow-indigo-600/20 cursor-pointer"
-                onClick={() => navigate(`/shows/${selectedShow._id}/seats`)}
-                leftIcon={Ticket}
-                rightIcon={ChevronRight}
+            {/* Main Admission / Ticket Card (Sleek & Proportional) */}
+            <div className="rounded-xl border border-amber-900/50 bg-[#351802]/90 backdrop-blur-md p-4 sm:p-5 shadow-lg flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <h3 className="font-bold text-sm sm:text-base text-white">
+                  {selectedShow?.hallId?.name
+                    ? `${selectedShow.hallId.name} • General Admission`
+                    : 'General Admission'}
+                </h3>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xl sm:text-2xl font-black font-['Outfit'] text-white">
+                    ${minPrice}
+                  </span>
+                  <span className="text-xs text-stone-300 font-medium">/ seat</span>
+                </div>
+              </div>
+
+              {/* Proper Sized Gold Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedShow?._id) {
+                    navigate(`/shows/${selectedShow._id}/seats`);
+                  }
+                }}
+                className="px-6 py-2.5 rounded-xl bg-[#fbc687] hover:bg-[#fad3a2] active:bg-[#f6b76c] text-[#341602] font-black text-xs sm:text-sm tracking-wide shadow-md transition-all duration-150 transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
               >
-                Select Seats on Map
-              </Button>
-            )}
+                <span>Add +</span>
+              </button>
+            </div>
+
+            {/* Essential Event & Booking Info */}
+            <div className="rounded-xl border border-amber-900/40 bg-[#321703]/70 p-4 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-amber-900/30">
+                <span className="font-bold text-xs uppercase tracking-wider text-amber-200/90 font-['Outfit']">
+                  Important Event Guidelines
+                </span>
+                <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Verified Box Office
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="flex items-start gap-2.5">
+                  <Ticket className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-white block text-[11px]">Instant Digital Pass</span>
+                    <span className="text-[10px] text-stone-400">Official admission voucher with fast mobile check-in</span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2.5">
+                  <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-white block text-[11px]">Gate Opening</span>
+                    <span className="text-[10px] text-stone-400">Doors open 30 minutes before showtime</span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2.5">
+                  <Building2 className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-white block text-[11px]">Auditorium Hall</span>
+                    <span className="text-[10px] text-stone-400">
+                      {selectedShow?.hallId?.name || 'Screen 1'} • {selectedShow?.hallId?.screenType || 'Air-Conditioned'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-white block text-[11px]">Easy Cancellation</span>
+                    <span className="text-[10px] text-stone-400">Refundable up to 4 hours before showtime</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* "Did you know?" Trust Card (Compact) */}
+            <div className="rounded-xl bg-[#492606]/80 border border-amber-800/40 p-3.5 flex items-start gap-3 text-xs text-stone-200">
+              <Lightbulb className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
+              <p className="leading-relaxed text-[11px]">
+                <strong className="text-white">Did you know?</strong> We guarantee 100% verified official tickets directly with the venue so you experience zero booking fees and instant seating reservation.
+              </p>
+            </div>
+
           </div>
         </div>
       </div>

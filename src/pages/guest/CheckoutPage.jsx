@@ -54,7 +54,7 @@ const cardElementOptions = {
       '::placeholder': {
         color: '#94a3b8',
       },
-      iconColor: '#4f46e5',
+      iconColor: '#d97706',
     },
     invalid: {
       color: '#e11d48',
@@ -173,20 +173,20 @@ const StripeElementsCheckoutForm = ({
     <form onSubmit={handleStripePay} className="space-y-6">
       {/* Guest Contact Information */}
       <Card className="p-6 space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <h2 className="text-base font-bold font-['Outfit'] text-slate-900">Guest Information</h2>
+        <div className="flex items-center justify-between pb-3 border-b border-stone-200">
+          <h2 className="text-base font-bold font-['Outfit'] text-stone-900">Guest Information</h2>
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={fillTestGuest}
             leftIcon={Sparkles}
-            className="text-indigo-600 text-xs"
+            className="text-amber-700 hover:text-amber-800 text-xs font-semibold cursor-pointer"
           >
             Fill Demo Guest
           </Button>
         </div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-stone-500">
           Your admission tickets and gate QR code will be delivered to this verified email.
         </p>
 
@@ -229,10 +229,10 @@ const StripeElementsCheckoutForm = ({
 
       {/* Official Stripe Card Element */}
       <Card className="p-6 space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="flex items-center justify-between pb-3 border-b border-stone-200">
           <div className="flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-indigo-600" />
-            <h2 className="text-base font-bold font-['Outfit'] text-slate-900">Credit or Debit Card</h2>
+            <CreditCard className="w-5 h-5 text-amber-600" />
+            <h2 className="text-base font-bold font-['Outfit'] text-stone-900">Credit or Debit Card</h2>
           </div>
           <Badge variant="success" className="text-[10px]">
             <ShieldCheck className="w-3.5 h-3.5" />
@@ -241,19 +241,19 @@ const StripeElementsCheckoutForm = ({
         </div>
 
         <div className="space-y-3">
-          <label className="block text-xs font-bold text-slate-700">
+          <label className="block text-xs font-bold text-stone-700">
             Card Details (Number, Expiration, CVC, ZIP) *
           </label>
-          <div className="p-4 bg-white border border-slate-300 rounded-xl focus-within:border-indigo-600 focus-within:ring-2 focus-within:ring-indigo-500/15 transition-all shadow-2xs">
+          <div className="p-4 bg-white border border-stone-300 rounded-xl focus-within:border-amber-600 focus-within:ring-2 focus-within:ring-amber-500/20 transition-all shadow-2xs">
             <CardElement
               options={cardElementOptions}
               onReady={() => setCardReady(true)}
             />
           </div>
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex items-start gap-2">
-            <Info className="w-4 h-4 text-indigo-600 flex-shrink-0 mt-0.5" />
+          <div className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-[11px] text-stone-600 flex items-start gap-2">
+            <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
             <span>
-              Test mode is enabled. Use test card <strong className="text-indigo-700 font-mono">4242 4242 4242 4242</strong> with any future date & CVC.
+              Test mode is enabled. Use test card <strong className="text-amber-800 font-mono">4242 4242 4242 4242</strong> with any future date & CVC.
             </span>
           </div>
         </div>
@@ -261,9 +261,9 @@ const StripeElementsCheckoutForm = ({
         <div className="pt-2">
           <Button
             type="submit"
-            variant="primary"
+            variant="gold"
             size="lg"
-            className="w-full"
+            className="w-full text-sm font-black"
             isLoading={processing}
             disabled={processing || !stripe || !cardReady}
             leftIcon={Lock}
@@ -365,11 +365,11 @@ const SandboxCheckoutForm = ({
     <form onSubmit={handlePay} className="space-y-6">
       {/* Guest Contact Information */}
       <Card className="p-6 space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <h2 className="text-base font-bold font-['Outfit'] text-slate-900">Guest Information</h2>
-          <Badge variant="secondary">Step 1</Badge>
+        <div className="flex items-center justify-between pb-3 border-b border-stone-200">
+          <h2 className="text-base font-bold font-['Outfit'] text-stone-900">Guest Information</h2>
+          <Badge variant="neutral">Step 1</Badge>
         </div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-stone-500">
           Your admission tickets and gate QR code will be delivered to this verified email.
         </p>
 
@@ -412,10 +412,10 @@ const SandboxCheckoutForm = ({
 
       {/* Stripe Card Payment */}
       <Card className="p-6 space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="flex items-center justify-between pb-3 border-b border-stone-200">
           <div className="flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-indigo-600" />
-            <h2 className="text-base font-bold font-['Outfit'] text-slate-900">Payment Details</h2>
+            <CreditCard className="w-5 h-5 text-amber-600" />
+            <h2 className="text-base font-bold font-['Outfit'] text-stone-900">Payment Details</h2>
           </div>
           <Badge variant="warning" className="text-[10px]">
             <span>Stripe Sandbox Mode</span>
@@ -473,9 +473,9 @@ const SandboxCheckoutForm = ({
         <div className="pt-2">
           <Button
             type="submit"
-            variant="primary"
+            variant="gold"
             size="lg"
-            className="w-full"
+            className="w-full text-sm font-black"
             isLoading={processing}
             disabled={processing}
             leftIcon={Lock}
@@ -593,8 +593,8 @@ export const CheckoutPage = () => {
   if (loading) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-        <p className="text-xs text-slate-500 font-medium">Securing Stripe checkout session...</p>
+        <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+        <p className="text-xs text-amber-200/80 font-medium">Securing Stripe checkout session...</p>
       </div>
     );
   }
@@ -667,19 +667,19 @@ export const CheckoutPage = () => {
         {/* Order Summary (2 cols) */}
         <div className="md:col-span-2 space-y-4">
           <Card className="p-6 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-base font-['Outfit'] text-slate-900">Order Summary</h3>
-              <Badge variant="secondary">{hold?.seatIds?.length || 0} Tickets</Badge>
+            <div className="flex items-center justify-between pb-3 border-b border-stone-200">
+              <h3 className="font-bold text-base font-['Outfit'] text-stone-900">Order Summary</h3>
+              <Badge variant="neutral">{hold?.seatIds?.length || 0} Tickets</Badge>
             </div>
 
             {/* Reserved Seats List */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
-              <span className="font-semibold text-slate-700 block">Reserved Seats / Passes</span>
+            <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 space-y-2 text-xs">
+              <span className="font-semibold text-stone-700 block">Reserved Seats / Passes</span>
               <div className="flex flex-wrap gap-1.5">
                 {hold?.seatIds?.map((seatCode) => (
                   <span
                     key={seatCode}
-                    className="px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 font-mono font-bold text-xs"
+                    className="px-2.5 py-1 rounded-lg bg-amber-100 border border-amber-300 text-amber-900 font-mono font-bold text-xs"
                   >
                     {seatCode}
                   </span>
@@ -689,22 +689,22 @@ export const CheckoutPage = () => {
 
             {/* Price Breakdown */}
             <div className="space-y-2 text-xs pt-2">
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-stone-600">
                 <span>Seats Subtotal</span>
-                <span className="font-semibold text-slate-900">${(hold?.totalAmount || 0).toFixed(2)}</span>
+                <span className="font-semibold text-stone-900">${(hold?.totalAmount || 0).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-stone-600">
                 <span>Facility & Booking Fee</span>
-                <span className="font-semibold text-slate-900">${facilityFee.toFixed(2)}</span>
+                <span className="font-semibold text-stone-900">${facilityFee.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm font-bold text-slate-900 pt-3 border-t border-slate-100">
+              <div className="flex justify-between text-sm font-bold text-stone-900 pt-3 border-t border-stone-200">
                 <span>Total Amount Due</span>
                 <span className="text-emerald-700 font-mono text-base font-extrabold">${grandTotal.toFixed(2)}</span>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 space-y-1">
-              <div className="flex items-center gap-1.5 text-slate-800 font-semibold">
+            <div className="p-3.5 rounded-xl bg-stone-50 border border-stone-200 text-[11px] text-stone-600 space-y-1">
+              <div className="flex items-center gap-1.5 text-stone-800 font-semibold">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Instant Ticket Issuance</span>
               </div>
